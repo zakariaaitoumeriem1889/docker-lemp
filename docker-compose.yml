@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  # Database container
+  database:
+    image: mariadb
+    container_name: mariadb-container
+    restart: always
+    volumes:
+      - ./mariadb:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+      MYSQL_DATABASE: SymfonyDB
+
+  # Phpmyadmin container
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin-container
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: database
+    depends_on:
+      - database
+
+  # Maildev container
+  maildev:
+    image: maildev/maildev
+    container_name: maildev-container
+    command: bin/maildev --web 80 --smtp 25 --hide-extensions STARTTLS
+    ports:
+      - "1500:80"
+    restart: always
+
+  # PHP service
+  php:
+    container_name: php-container
+    build:
+      context: ./docker/php
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./app/:/var/www/app:cached
+
+  # Nginx service
+  nginx:
+    container_name: nginx-container
+    build:
+      context: ./docker/nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./app/:/var/www/app:cached
